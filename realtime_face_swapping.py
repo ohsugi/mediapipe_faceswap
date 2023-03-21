@@ -1,5 +1,7 @@
+import os
 import cv2
 import dlib_faceswap
+import numpy as np
 
 
 def init_windows():
@@ -13,15 +15,24 @@ def init_windows():
 
 indexes_triangles = []
 
+# get file list in path
+def get_files(dir_path):
+    res = []
+    for path in os.listdir(dir_path):
+        # check if current path is a file
+        if os.path.isfile(os.path.join(dir_path, path)):
+            res.append(dir_path + path)
+    return res
+
 flag_draw_landmarks = False
 flag_draw_mask = False
 flag_change_face = False
 face_list_index = 0
-change_face_list = []  # write here your reference photos.
+change_face_list = get_files("./faces/")
 MAX_FACESWAP_IMAGES = len(change_face_list) - 1
+
 if len(change_face_list) == 0:
-    print("WARNING: (EMPTY IMAGE ARRAY) PLEASE PUT IN THE variable change_face_list the images that you would like to "
-          "swap")
+    print("WARNING: (EMPTY IMAGE ARRAY) PLEASE PUT IN THE variable change_face_list the images that you would like to swap")
     assert False
 width = 640
 height = 480
@@ -47,17 +58,19 @@ if camera_opened:
                 base_img = dlib_handler.updateBaseImg(change_face_list[face_list_index])
                 flag_change_face = False
             input_image = base_img.copy()
-
+            
             if flag_draw_mask:
                 input_image = dlib_handler.draw_base_triangles()
-
+            
             dlib_handler.process_target(img_target)
             if flag_draw_landmarks:
                 input_image = dlib_handler.draw_base_landmarks()
                 img_target = dlib_handler.draw_target_landmarks()
+            
             cv2.imshow("img2", img_target)
             dlib_handler.show_seamlessclone()
             dlib_handler.show_result()
+            
             key = cv2.waitKey(30)
             if key == 27:
                 break
@@ -71,10 +84,10 @@ if camera_opened:
                 if face_list_index > MAX_FACESWAP_IMAGES:
                     face_list_index = 0
             if key == 83 or key == 115:
+                cv2.imwrite("img2.jpg", img_target)
+                cv2.imwrite("clone.jpg", dlib_handler.getSeamlessIMG())
+                cv2.imwrite("result.jpg", dlib_handler.getResultImg())
                 break
-                # cv2.imwrite("img2.jpg", img_target)
-                # cv2.imwrite("clone.jpg", dlib_handler.getSeamlessIMG())
-                # cv2.imwrite("result.jpg", dlib_handler.getResultImg())
-
+            
     cap.release()
     cv2.destroyAllWindows(input_image)
